@@ -1,0 +1,1681 @@
+import tkinter as tk
+import random
+import time
+
+#Imports the tkinter library and PIL module
+from tkinter import *
+from tkinter import simpledialog
+from tkinter import messagebox
+from PIL import ImageTk, Image
+from pprint import pprint
+
+#Creates instance of tkinter window
+window = tk.Tk()
+
+#Resizes the size of the background image to the size of the screen
+def displayBackground(screenWidth, screenHeight):
+    
+    #Defines the background image
+    bgFile = Image.open('E:\Hariram\CS NEA Python\Card Images\Background.png')
+
+    #Resizes the image to the size of the screen
+    resizedBG = bgFile.resize((screenWidth,screenHeight), Image.ANTIALIAS)
+    global newBackground
+    newBackground = ImageTk.PhotoImage(resizedBG)
+
+    #Places the image on the canvas
+    canvas.create_image(0, 0, anchor=NW, image=newBackground)
+
+
+#Displays the value stored in the pot
+def displayPot(potValue):
+
+    #Converts to string type
+    potValueStr = str(potValue)
+
+    #Creates the label for number of chips in the pot with the text being set
+    global potLabel
+    potLabel = Label(window, text=('Pot Value: ' + potValueStr))
+
+    #Changes the font and size of the label
+    potLabel.config(font=("Courier", 20))
+
+    #Places the label in the correct location
+    potLabel.place(x=920,y=400)
+
+#Displays the value stored in the pot
+def displayTurn(playerTurn):
+    
+    #Creates the label for number of chips in the pot with the text being set
+    turnLabel = Label(window, text=("Player " + str(playerTurn + 1) + "'s Turn"))
+
+    #Changes the font and size of the label
+    turnLabel.config(font=("Courier", 20))
+
+    #Places the label in the correct location
+    turnLabel.place(x=900,y=610)
+
+    return turnLabel
+    
+#Displays the value of number of poker chips held by each player
+def displayUserChips(numOfChips, playerNum, X, Y):
+
+    #Converts to string type
+    numChipsStr = str(numOfChips)
+    playerNumStr = str(playerNum)
+
+    #Creates the label for number of chips held by the player with the text being set 
+    chipLabel = Label(window, text=('Player ' + playerNumStr + ' Chips: ' + numChipsStr))
+
+    #Changes the font and size of the label
+    chipLabel.config(font=("Courier", 15))
+
+    #Places the label in the correct location
+    chipLabel.place(x=X, y=Y)
+
+    return chipLabel
+
+#Displays the number of chips the user is willing to bet for that round 
+def displayChipsToBet(chipsBet, X, Y):
+
+    #Converts to string type
+    chipsBetStr = str(chipsBet)
+
+    #Displays the label for number of chips the use is willing to bet for the round with the text being set
+    betLabel = Label(window, text=('Number of Chips Betting: ' + chipsBetStr))
+
+    #Changes the font and size of the label
+    betLabel.config(font=("Courier", 15))
+
+    #Places the label in the correct location
+    betLabel.place(x=X, y=Y)
+
+    return betLabel
+
+#creates the deck of cards
+def createCards():
+
+    #Creates the deck for the cards to be stored in
+    deck = [["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""],["", ""], ["", ""], ["", ""], ["", ""],
+            ["", ""], ["", ""], ["", ""], ["", ""],["", ""], ["", ""], ["", ""], ["", ""],["", ""], ["", ""], ["", ""],
+            ["", ""],["", ""], ["", ""], ["", ""], ["", ""],["", ""], ["", ""], ["", ""], ["", ""],["", ""], ["", ""], ["", ""],
+            ["", ""],["", ""], ["", ""], ["", ""], ["", ""],["", ""], ["", ""], ["", ""], ["", ""],["", ""], ["", ""],
+            ["", ""], ["", ""],["", ""], ["", ""], ["", ""], ["", ""]]
+    #Arrays storing every possible suit and symbol
+    suits = ["Spades", "Hearts", "Clubs", "Diamonds"]
+    symbols = ["Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Jack", "Queen", "King", "Ace"]
+
+    cardNum = 0
+
+    #Making all possible combinations(52 cards in a deck)
+    for i in range(4):
+        for j in range(13):
+            deck[cardNum][0] = suits[i]
+            deck[cardNum][1] = symbols[j]
+            cardNum = cardNum + 1
+    return deck
+
+#Shuffles the deck of cards
+def shuffleCards(deck):
+    random.shuffle(deck)
+    return deck
+
+#Creates the interface for the user
+def createInterface(numOfChipsPerPlayer, initialBets, numOfPlayers):
+
+    #Array to store the labels for displaying amount user holds and amount they are willing to bet
+    userChipLbl = [["" for x in range(numOfPlayers)] for y in range(2)]
+    
+    #To display number of poker chips held by each player
+    userChipLbl[0][0] = displayUserChips(numOfChipsPerPlayer, 1, 500, 930)
+    userChipLbl[0][1] = displayUserChips(numOfChipsPerPlayer, 2, 60, 500)
+    userChipLbl[0][2] = displayUserChips(numOfChipsPerPlayer, 3, 500, 120)
+    userChipLbl[0][3] = displayUserChips(numOfChipsPerPlayer, 4, 1100, 120)
+    userChipLbl[0][4] = displayUserChips(numOfChipsPerPlayer, 5, 1550, 500)
+    userChipLbl[0][5] = displayUserChips(numOfChipsPerPlayer, 6, 1100, 930)
+
+    #To display number of poker chips held by each player
+    userChipLbl[1][0] = displayChipsToBet(initialBets, 500, 950)
+    userChipLbl[1][1] = displayChipsToBet(initialBets, 60, 520)
+    userChipLbl[1][2] = displayChipsToBet(initialBets, 500, 95)
+    userChipLbl[1][3] = displayChipsToBet(initialBets, 1100, 95)
+    userChipLbl[1][4] = displayChipsToBet(initialBets, 1550, 520)
+    userChipLbl[1][5] = displayChipsToBet(initialBets, 1100, 950)
+
+    return userChipLbl
+
+#Function for dealing the preflop cards 
+def dealPreflopCards(deck, numOfPlayers):
+
+    currentCard = 0
+
+    #Creates the array for storing information on the cards held by each player
+    playerCards = [["" for x in range(4)] for y in range(numOfPlayers)]
+
+    #Repeats twice as each player needs to have two hole cards
+    for x in range(2):
+        #Gives a card to each player when this loop is executed once
+        for y in range(numOfPlayers):
+            #Assigns the cards to each player
+            if (x == 0):
+                playerCards[y][0] = deck[currentCard][0]
+                playerCards[y][1] = deck[currentCard][1]
+            else:
+                playerCards[y][2] = deck[currentCard][0]
+                playerCards[y][3] = deck[currentCard][1]
+                
+            currentCard = currentCard + 1
+    
+    return playerCards
+
+#Displays the cards faced up
+def displayCardsFaceUp(X, Y, suit, symbol):
+
+    #Creates and places the labels on which the card will be placed
+    card = Label(window, image = None)
+    card.place(x = X, y = Y)
+    
+    #Retrieves the card file for the turn cards
+    cardImg = Image.open('E:\\Hariram\\CS NEA Python\\Card Images\\' + symbol + ' of ' + suit + '.png')
+
+    #Resizes the card
+    resizedCard = cardImg.resize((90,130), Image.ANTIALIAS)
+    newCard = ImageTk.PhotoImage(resizedCard)
+
+    #Loads the image of the cards on the label
+    card.image = newCard
+    card.config(image = newCard)
+
+    return card
+
+#Displays the cards held by opponent players, displaying only the back of the cards
+def displayOpponentCards(X, Y):
+
+    #Creates and places the labels on which the cards will be placed
+    label = Label(window, image = None)
+    label.place(x = X, y = Y)
+    
+    #Retrieves file path for the image for the back of the cards
+    cardImg = Image.open('E:\\Hariram\\CS NEA Python\\Card Images\\Deck of cards (back).png')
+
+    #Resizes the image
+    resizedCard = cardImg.resize((90,130), Image.ANTIALIAS)
+    newCard = ImageTk.PhotoImage(resizedCard)
+
+    #Loads the image of the back of cards on the label
+    label.image = newCard
+    label.config(image = newCard)
+
+    return label
+
+#Creates the cards held by the opponent players
+def createOpponentCards():
+
+    #Creates the array to store labels needed to hold the opponent cards
+    oppCardArr = ["" for x in range(10)]
+    
+    #Created labels are added to the array for later retrieval
+    oppCardArr[0] = displayOpponentCards(60, 355)
+    oppCardArr[1] = displayOpponentCards(160, 355)
+    oppCardArr[2] = displayOpponentCards(510, 155)
+    oppCardArr[3] = displayOpponentCards(610, 155)
+    oppCardArr[4] = displayOpponentCards(1110, 155)
+    oppCardArr[5] = displayOpponentCards(1210, 155)
+    oppCardArr[6] = displayOpponentCards(1560, 355)
+    oppCardArr[7] = displayOpponentCards(1660, 355)
+    oppCardArr[8] = displayOpponentCards(1110, 780)
+    oppCardArr[9] = displayOpponentCards(1210, 780)
+
+    return oppCardArr
+
+
+#Subroutine for the preflop round
+def preflopRound(dealerNum, numOfPlayers, numOfChipsPerPlayer, anteValue, potValue, turnLabel, playerCards, oppCardArr, userChipLbl):
+
+    #Determines the size of the array gamePlayers
+    rows, cols = (numOfPlayers, 3)
+
+    #Creates the gamePlayers array which is used to determine the information on a player, such as
+    #the number of poker chips they hold, the amount they're willing to bet and whether they have folded
+    global gamePlayers
+    gamePlayers = [["" for x in range(cols)] for y in range(rows)]
+    for i in range(numOfPlayers):
+        gamePlayers[i][0] = numOfChipsPerPlayer
+        gamePlayers[i][1] = 0
+        gamePlayers[i][2] = False
+
+    #Calls function to play the antes
+    potValue = playAnte(anteValue, numOfPlayers, potValue, gamePlayers)
+    window.update()
+
+    #Sets the current player at to the dealer
+    playerNumberAt = dealerNum
+
+    #Calls the function to play the small and big blinds
+    playerNumberAt = playBlinds(playerNumberAt, numOfPlayers, gamePlayers, turnLabel)
+
+    #After the blinds the minimum bet is set to 10
+    minimumBet = 10
+
+    #Determines whether the first bet of the round has been placed
+    firstBetPlaced = True
+
+    nextRoundStart = roundPlay(firstBetPlaced, playerNumberAt, turnLabel, minimumBet, potValue, "Preflop", playerCards, oppCardArr, userChipLbl)
+
+    #Messagebox to indicate the flop is about to start
+    messagebox.showinfo("Flop Round", "The flop round is about to begin.") 
+    
+    return nextRoundStart
+    
+#Function to determine the next to make their move is 
+def nextPlayer(playerNumberAt, numOfPlayers, gamePlayers, turnLabel):
+
+    #Checks whether the program has reached the last player in the cycle
+    if (playerNumberAt == (numOfPlayers - 1)):
+        #If so the next player will be the player 1
+        playerNumberAt = 0
+    #If this isn't the case, then the it will just increment by 1
+    else:
+        playerNumberAt = playerNumberAt + 1
+
+    #Checks whether that next player has already folded, if so it checks the next player
+    while (gamePlayers[playerNumberAt][2] == True):
+        if (playerNumberAt == (numOfPlayers - 1)):
+            playerNumberAt = 0
+        else:
+            playerNumberAt = playerNumberAt + 1
+
+    turnLabel.config(text=("Player " + str(playerNumberAt + 1) + "'s Turn"))
+    window.update()
+              
+    return playerNumberAt
+
+#Subroutine to play the small and big blinds
+def playBlinds(playerNumberAt, numOfPlayers, gamePlayers, turnLabel):
+    
+    #Player next to dealer to play the small blind
+    playerNumberAt = nextPlayer(playerNumberAt, numOfPlayers, gamePlayers, turnLabel)
+    time.sleep(3)
+    window.update()
+    
+    gamePlayers[playerNumberAt][1] = gamePlayers[playerNumberAt][1] + 5
+
+    #Updates the label for the small blind
+    updateLbl(userChipLbl[1][playerNumberAt], playerNumberAt, gamePlayers)
+    
+    #Player two next to the dealer to play the big blind
+    playerNumberAt = nextPlayer(playerNumberAt, numOfPlayers, gamePlayers, turnLabel)
+    time.sleep(3)
+    window.update()
+    gamePlayers[playerNumberAt][1] = gamePlayers[playerNumberAt][1] + 10
+
+    #Updates the label for the big blind
+    updateLbl(userChipLbl[1][playerNumberAt], playerNumberAt, gamePlayers)
+
+    window.update()
+    
+    return playerNumberAt
+
+#Updates the label based on the amount of chips the player puts in
+def updateLbl(label, playerNumberAt, gamePlayers):
+    label.config(text=('Number of Chips Betting: ' + str(gamePlayers[playerNumberAt][1])))
+
+#Procedure for players to play the ante and shown onto the screen
+def playAnte(anteValue, numOfPlayers, potValue, gamePlayers):
+
+    #Plays ante after 3 seconds
+    time.sleep(3)
+
+    #The number of chips held by each player decreases by the ante value and labels are updated
+    for i in range(numOfPlayers):
+        gamePlayers[i][0] = gamePlayers[i][0] - anteValue
+        updateChipsLbl(userChipLbl[0][i], i, gamePlayers[i][0])       
+
+    #The pot value increaes by the total amount of chips the players cash in and the label is updated
+    potValue = potValue + (anteValue * numOfPlayers)
+    potLabel.config(text=('Pot Value: ' + str(potValue)))
+
+    return potValue
+
+#Updates the label for number of chips held based on the amount they are willing to bet
+def updateChipsLbl(label, i, value):
+    label.config(text=('Player ' + str((i + 1)) + ' Chips: ' + str(value)))
+
+#Function for the bots to make their appropriate moves
+def botMove(playerNumberAt, minimumBet, gameRound, playerCards, oppCardArr, userChipLbl):
+
+    #Creates a three second time delay between previous and current moves
+    window.update()
+    time.sleep(3)
+
+    if (gameRound == "Preflop"):
+        selectedMove = botMovePreflop(playerNumberAt, minimumBet, playerCards)
+    elif (gameRound == "River"):
+        selectedMove = botMoveRiver(playerNumberAt, minimumBet, playerCards)
+    else:
+        #Determines the move users are to make !!!Temporary Code!!!
+        if (playerNumberAt == 1):
+            selectedMove = "Call"
+        elif (playerNumberAt == 2):
+            selectedMove = "Call"
+        elif (playerNumberAt == 3):
+            selectedMove = "Raise"
+        elif (playerNumberAt == 4):
+            selectedMove = "Call"
+        elif (playerNumberAt == 5):
+            selectedMove = "Call"
+
+    #Executes the appropriate move selected by bots
+    match selectedMove:
+
+        #Selecting 'Raise' means they increase the bet
+        case "Raise":
+
+            #Varaible stores the value which the player wishes to increase the bet by
+            betPlaced = minimumBet * 2
+
+            #Minimum bet the next player can now make is the bet placed by the current player
+            minimumBet = betPlaced
+
+            #The value they are betting is stored in the gamePlayers array
+            gamePlayers[playerNumberAt][1] = betPlaced
+
+            #Updates the label on the screen to show that the bot has matched the previous bet
+            updateLbl(userChipLbl[1][playerNumberAt], playerNumberAt, gamePlayers)
+
+        #Selecting 'Call' means they match the previous bet
+        case "Call":
+            gamePlayers[playerNumberAt][1] = minimumBet
+
+            #Updates the label on the screen to show that the bot has matched the previous bet
+            updateLbl(userChipLbl[1][playerNumberAt], playerNumberAt, gamePlayers)
+
+        #Selecting 'Fold' means they throw away their cards and are no longer betting
+        case "Fold":
+            
+            #Sets the third colum of gamePlayers to "True" to indicate that player has folded
+            gamePlayers[playerNumberAt][2] = True
+
+            #As the player is now longer betting, the row to indicate the chips they were willing
+            #to bet is set back to 0
+            gamePlayers[playerNumberAt][1] = 0
+
+            updateLbl(userChipLbl[1][playerNumberAt], playerNumberAt, gamePlayers)
+
+            #Removes the appropriate cards from the screen
+            if (playerNumberAt == 1):
+                oppCardArr[0].destroy()
+                oppCardArr[1].destroy()
+            elif (playerNumberAt == 2):
+                oppCardArr[2].destroy()
+                oppCardArr[3].destroy()
+            elif (playerNumberAt == 3):
+                oppCardArr[4].destroy()
+                oppCardArr[5].destroy()
+            elif (playerNumberAt == 4):
+                oppCardArr[6].destroy()
+                oppCardArr[7].destroy()
+            elif (playerNumberAt == 5):
+                oppCardArr[8].destroy()
+                oppCardArr[9].destroy()
+
+    return minimumBet
+
+#Function called when user clicks oon the 'Call' button
+def userCall(minimumBet, userChipLbl):
+    
+    #The value they are betting is stored in the gamePlayers array 
+    gamePlayers[0][1] = minimumBet
+
+    #Updates the label on the screen to show that the bot has matched the previous bet
+    updateLbl(userChipLbl[1][0], 0, gamePlayers)
+
+#Function called when user clicks on the 'Fold' button
+def userFold():
+    
+    #Sets the third colum of gamePlayers to "True" to indicate that player has folded
+    gamePlayers[0][2] = True
+
+    #As the player is now longer betting, the row to indicate the chips they were willing
+    #to bet is set back to 0
+    gamePlayers[0][1] = 0
+
+    #The label on the screen is updated to show they are no longer betting for this game
+    updateLbl(userChipLbl[1][0], 0, gamePlayers)
+
+    #Removes the two user cards
+    userCard1.destroy()
+    userCard2.destroy()
+
+#Function called when the user clicks the 'Raise' button
+def userRaise(minimumBet, userChipLbl):
+
+    #Opens a new window enabling user to enter the amount they are raising to 
+    betPlaced = simpledialog.askstring(title="User Raise",
+                                        prompt="How much are you raising to?:")
+
+    #Validates the user input for the amount they're raising to
+    resultValid = validateRaise(betPlaced, minimumBet)
+
+    #Enables the user to keep re-entering if input is invalid
+    while resultValid == False:
+        #Opens a new window enabling user to enter the amount they are raising to 
+        betPlaced = simpledialog.askstring(title="User Raise",
+                                           prompt="How much are you raising to?:")
+
+        resultValid = validateRaise(betPlaced, minimumBet)
+
+    #Minimum bet is set as the bet placed by the user
+    minimumBet = int(betPlaced)
+    
+    #The value they are betting is stored in the gamePlayers array
+    gamePlayers[0][1] = int(betPlaced)
+
+    #Updates the label on the screen to show that the bot has matched the previous bet
+    updateLbl(userChipLbl[1][0], 0, gamePlayers)
+
+    return minimumBet
+
+#Function to validate the raise input entered by the user
+def validateRaise(betPlaced, minimumBet):
+
+    #Checks whether the field is blank and gets the user to re-enter if so
+    if (betPlaced == ""):
+        messagebox.showerror("Error", "Please ensure field has been entered")
+
+        return False
+
+    #Checks whether the value entered is not an integer and gets the user to re-enter if so
+    elif not (betPlaced.isdigit()):
+        messagebox.showerror("Error", "Please ensure an integer value has been entered")
+
+        return False
+
+    #Checks whether the value entered is less than the minimum bet and gets user to re-enter if so
+    elif (int(betPlaced) <= minimumBet):
+        messagebox.showerror("Error", "Please ensure the bet is greater than the minimum bet")
+
+        return False
+        
+    #Checks whether the value entered is greater than the amount of chips held by the user and gets the user to re-enter if so
+    elif (int(betPlaced) > gamePlayers[0][0]):
+        messagebox.showerror("Error", "You do not have enough poker chips to make this bet. Please try again")
+
+        return False
+    
+    else:
+        
+        return True
+
+#Function to determine the number of players left in the game
+def checkNumPlayers(mumOfPlayers):
+
+    #Sets the number of players left to the total number of players at the start of the game
+    numPlayersLeft = numOfPlayers
+
+    #Checks whether the player has folded and the value of numPlayersleft decrements if so
+    for i in range (numPlayersLeft):
+        userFolded = gamePlayers[i][2]
+        if (userFolded == True):
+            numPlayersLeft = numPlayersLeft - 1
+
+    return numPlayersLeft
+
+#Function to determine whether every player left in the game has placed the same amount of chips
+def checkChipsSame(numOfPlayers):
+    #Initially sets 'chipValuesSame' to True
+    chipValuesSame = True
+
+    #List to add the values betting for those that haven't folded
+    chip_list = []
+
+    #Traverses througH every player in the table
+    for i in range(numOfPlayers):
+
+        #Skips the player if they have folded
+        if(gamePlayers[i][2] == False):
+
+            #Adds the amount that player is betting to the list
+            chip_list.append(gamePlayers[i][1])
+
+    #Traverses through every player added to the list
+    for x in range(len(chip_list)):
+        #Compares the first item to every other item
+        if ((chip_list[0] != chip_list[x]) or (chip_list[x] == 0)): 
+
+            #If one player is different then the value is set to false
+            chipValuesSame = False
+
+    return chipValuesSame
+
+#Function to allow user to enter the move they are making
+def userMove(minimumBet, userChipLbl):
+
+    #Enables user to input their move
+    move = simpledialog.askstring(title="User Move",
+                                        prompt="What move are you making?:")
+    
+    #Validates the user input 
+    moveValid = validateMove(move, minimumBet, userChipLbl)
+
+    #Enables the user to keep re-entering if input is invalid
+    while moveValid == False:
+        #Opens a new window enabling user to keep re-entering if invalid 
+        move = simpledialog.askstring(title="User Move",
+                                            prompt="What move are you making?:")
+
+        moveValid = validateMove(move, minimumBet)
+
+    if (move == "Raise") or (move == "raise"):
+        minimumBet = gamePlayers[0][1]
+
+    return minimumBet
+
+#Function to validate the move entered by the user
+def validateMove(move, minimumBet, userChipLbl):
+    #If the user wants to fold, the fold procedure is called
+    if (move == "Fold") or (move == "fold"):
+        userFold()
+
+        return True
+
+    #If the user wants to call, the call procedure is called
+    elif (move == "Call") or (move == "call"):
+        userCall(minimumBet, userChipLbl)
+        return True
+
+    ##If the user wants to raise, the raise procedure is called
+    elif (move == "Raise") or (move == "raise"):
+        userRaise(minimumBet, userChipLbl)
+
+        return True
+        
+    #Any other input gets rejected
+    else:
+        messagebox.showerror("Error", "Invalid input. Please try again")
+
+        return False
+
+#Function for flop round
+def flop(playerCards, cardNum, deck, playerNumberAt, turnLabel, potValue, oppCardArr, userChipLbl):
+    #Determines the size of the array communityCards array
+    rows, cols = (5, 2)
+
+    #Creates the array which stores the 5 community cards
+    global communityCards
+    communityCards = [["" for x in range(cols)] for y in range(rows)]
+
+    #Deals the flop cards out
+    communityCards = dealFlops(cardNum, deck, communityCards)
+
+    #Updates pointer for the card at the top of the stack
+    cardNum = cardNum + 3
+
+    #Calls function to display the flop cards onto the canvas
+    comCard1 = displayCardsFaceUp(720, 470, communityCards[0][0], communityCards[0][1])
+    comCard2 = displayCardsFaceUp(820, 470, communityCards[1][0], communityCards[1][1])
+    comcard3 = displayCardsFaceUp(920, 470, communityCards[2][0], communityCards[2][1])
+
+    minimumBet = 0
+
+    #Determines whether the first bet of the round has been placed
+    firstBetPlaced = False
+
+    playerNumerAt = dealerNum
+
+    turnLabel.config(text=("Player " + str(playerNumberAt + 1) + "'s Turn"))
+    window.update()
+
+    nextRoundStart = roundPlay(firstBetPlaced, playerNumberAt, turnLabel, minimumBet, potValue, "Flop", playerCards, oppCardArr, userChipLbl)
+
+    #Messagebox to indicate the turn round is about to start
+    messagebox.showinfo("Turn Round", "The turn round is about to begin.") 
+
+    return nextRoundStart
+
+#Function to deal the flop cards
+def dealFlops(cardNum, deck, communityCards):
+
+    #Places the three cards on the top of the deck onto the table
+    for i in range(3):
+        communityCards[i][0] = deck[cardNum][0]
+        communityCards[i][1] = deck[cardNum][1]
+
+        #Value of 'cardNum' increments as a card is selected from deck
+        cardNum = cardNum + 1
+
+    return communityCards
+
+def botFirstMove(playerNumberAt, minimumBet, oppCardArr, userChipLbl):
+    
+    #Creates a three second time delay between previous and current moves
+    window.update()
+    time.sleep(3)
+    
+    #Determines the move users are to make !!!Temporary Code!!!
+    if (playerNumberAt == 1):
+        selectedMove = "Check"
+    elif (playerNumberAt == 2):
+        selectedMove = "Bet"
+    elif (playerNumberAt == 3):
+        selectedMove = "Bet"
+    elif (playerNumberAt == 4):
+        selectedMove = "Check"
+    elif (playerNumberAt == 5):
+        selectedMove = "Bet"
+
+    #Executes the appropriate move selected by bots
+    match selectedMove:
+
+        #Selecting 'Bet' means they can play a bet
+        case "Bet":
+
+            betPlaced = 30
+
+            #Minimum bet the next player can now make is the bet placed by the current player
+            minimumBet = betPlaced
+
+            #The value they are betting is stored in the gamePlayers array
+            gamePlayers[playerNumberAt][1] = betPlaced
+
+            #Updates the label on the screen to show that the bot has matched the previous bet
+            updateLbl(userChipLbl[1][playerNumberAt], playerNumberAt, gamePlayers)
+
+            return True
+            
+        #Selecting 'Check' meants they don't make a bet
+        case "Check":
+            pass
+
+            return False
+
+        #Selecting 'Fold' means they throw away their cards and are no longer betting
+        case "Fold":
+            
+            #Sets the third colum of gamePlayers to "True" to indicate that player has folded
+            gamePlayers[playerNumberAt][2] = True
+
+            #As the player is now longer betting, the row to indicate the chips they were willing
+            #to bet is set back to 0
+            gamePlayers[playerNumberAt][1] = 0
+
+            #The label on the screen is updated to show they are no longer betting for this game
+            betLabel = retrieveBetLbl(playerNumberAt)
+            updateLbl(betLabel, playerNumberAt, gamePlayers)
+
+            #Removes the appropriate cards from the screen
+            if (playerNumberAt == 1):
+                oppCardArr[0].destroy()
+                oppCardArr[1].destroy()
+            elif (playerNumberAt == 2):
+                oppCardArr[2].destroy()
+                oppCardArr[3].destroy()
+            elif (playerNumberAt == 3):
+                oppCardArr[4].destroy()
+                oppCardArr[5].destroy()
+            elif (playerNumberAt == 4):
+                oppCardArr[6].destroy()
+                oppCardArr[7].destroy()
+            elif (playerNumberAt == 5):
+                oppCardArr[8].destroy()
+                oppCardArr[9].destroy()
+
+            return False
+
+#Function for user moves when first bet hasn't been placed
+def userFirstMove(minimumBet, userChipLbl):
+    #Enables user to input their move
+    move = simpledialog.askstring(title="User Move",
+                                        prompt="What move are you making?:")
+    
+    #Validates the user input 
+    moveValid = validateFirstMove(move, minimumBet, userChipLbl)
+
+    #Enables the user to keep re-entering if input is invalid
+    while moveValid == False:
+        #Opens a new window enabling user to keep re-entering if invalid 
+        move = simpledialog.askstring(title="User Move",
+                                            prompt="What move are you making?:")
+
+        moveValid = validateFirstMove(move, minimumBet)
+
+    #Checks whether the first bet has been placed
+    if (move == "Bet") or (move == "bet"):
+        return True
+    else:
+        return False
+
+#Function to check whether user input for first move is valid and executes it if so
+def validateFirstMove(move, minimumBet, userChipLbl):
+    
+    #If the user wants to fold, the fold procedure is called
+    if (move == "Fold") or (move == "fold"):
+        userFold()
+
+        return True
+
+    #If the user wants to check, nothing happens
+    elif (move == "Check") or (move == "check"):
+
+        return True
+
+    ##If the user wants to bet, the bet procedure is called
+    elif (move == "Bet") or (move == "bet"):
+        userBet(minimumBet, userChipLbl)
+
+        return True
+        
+    #Any other input gets rejected
+    else:
+        messagebox.showerror("Error", "Invalid input. Please try again")
+
+        return False
+
+#Function called after user chooses to bet
+def userBet(minimumBet, userChipLbl):
+    #Opens a new window enabling user to enter the amount they are betting 
+    betPlaced = simpledialog.askstring(title="User Raise",
+                                        prompt="How much are you betting?:")
+
+    #Validates the user input for the amount they're betting
+    resultValid = validateBet(betPlaced, minimumBet)
+
+    #Enables the user to keep re-entering if input is invalid
+    while resultValid == False:
+        #Opens a new window enabling user to enter the amount they are betting 
+        betPlaced = simpledialog.askstring(title="User Raise",
+                                           prompt="How much are you betting?:")
+
+        resultValid = validateBet(betPlaced, minimumBet)
+
+    #Minimum bet is set as the bet placed by the user
+    minimumBet = int(betPlaced)
+    
+    #The value they are betting is stored in the gamePlayers array
+    gamePlayers[0][1] = int(betPlaced)
+
+    #Updates the label on the screen to show the user how much they have put in
+    updateLbl(userChipLbl[1][playerNumberAt], 0, gamePlayers)
+
+
+#Function to validate the bet entered by the user
+def validateBet(betPlaced, minimumBet):
+    
+    #Checks whether the field is blank and gets the user to re-enter if so
+    if (betPlaced == ""):
+        messagebox.showerror("Error", "Please ensure field has been entered")
+
+        return False
+
+    #Checks whether the value entered is not an integer and gets the user to re-enter if so
+    elif not (betPlaced.isdigit()):
+        messagebox.showerror("Error", "Please ensure an integer value has been entered")
+
+        return False
+
+    #Checks whether the value entered is less than the minimum bet and gets user to re-enter if so
+    elif (int(betPlaced) <= minimumBet):
+        print (minimumBet)
+        messagebox.showerror("Error", "Please ensure the bet is greater than the minimum bet")
+
+        return False
+        
+    #Checks whether the value entered is greater than the amount of chips held by the user and gets the user to re-enter if so
+    elif (int(betPlaced) >= gamePlayers[0][0]):
+        messagebox.showerror("Error", "You do not have enough poker chips to make this bet. Please try again")
+
+        return False
+    
+    else:
+        
+        return True
+    
+#Function for the turn round
+def turn(playerCards, cardNum, deck, dealerNum, communityCards, turnLabel, potValue, oppCardArr, userChipLbl):
+
+    #Deal out the card required in the turn round
+    communityCards = dealTurn(deck, cardNum)
+    
+    #Calls function to display the flop cards onto the canvas
+    comcard4 = displayCardsFaceUp(1020, 470, communityCards[3][0], communityCards[3][1])
+
+    minimumBet = 0
+    playerNumberAt = dealerNum
+
+    #Determines whether the first bet of the round has been placed
+    firstBetPlaced = False
+
+    nextRoundStart = roundPlay(firstBetPlaced, playerNumberAt, turnLabel, minimumBet, potValue, "Turn", playerCards, oppCardArr, userChipLbl)
+
+    #Messagebox to indicate the river round is about to start
+    messagebox.showinfo("River Round", "The river round is about to begin.")
+
+    return nextRoundStart
+
+def roundPlay(firstBetPlaced, playerNumberAt, turnLabel, minimumBet, potValue, gameRound, playerCards, oppCardArr, userChipLbl):
+
+    #Determines the number of players left in the game and whether each player has contributed same amount of chips
+    numPlayersLeft = checkNumPlayers(numOfPlayers)
+    chipValuesSame = checkChipsSame(numOfPlayers)
+    
+    #Checks conditions for whether round should be over
+    while (numPlayersLeft != 1) and (chipValuesSame == False):
+
+        #Finds out who the next player to make their move is 
+        playerNumberAt = nextPlayer(playerNumberAt, numOfPlayers, gamePlayers, turnLabel)
+
+        #Checks whether the first bet has been placed
+        if firstBetPlaced == True:
+            #Works out whether it is the users turn or a bots
+            if (playerNumberAt != 0):
+                minimumBet = botMove(playerNumberAt, minimumBet, gameRound, playerCards, oppCardArr, userChipLbl)
+            else:
+                minimumBet = userMove(minimumBet, userChipLbl)
+        else:
+            #Works out whether it is the users turn or a bots            
+            if (playerNumberAt != 0):
+                firstBetPlaced = botFirstMove(playerNumberAt, minimumBet, oppCardArr, userChipLbl)
+            else:
+                firstBetPlaced = userFirstMove(minimumBet, userChipLbl)
+
+            if (firstBetPlaced == True):
+                minimumBet = gamePlayers[playerNumberAt][1]
+                
+        #Recalculates values for 'numPlayersLeft' and 'chipsValuesSame'
+        numPlayersLeft = checkNumPlayers(numOfPlayers)
+        chipValuesSame = checkChipsSame(numOfPlayers)
+
+    #Checks whether there is only one player left
+    if(numPlayersLeft == 1):
+        #Traverses through every player checking whether they folded
+        for x in range(numOfPlayers):
+            if (gamePlayers[x][2] == False):
+                #The one player left is the winner
+                winnerNum = x
+
+        #Updates the gamePlayers array
+        gamePlayers[winnerNum][0] = gamePlayers[winnerNum][0] + potValue
+        gamePlayers[winnerNum][1] = 0
+
+        #Updates the GUI screen to show the user this change
+        updateLbl(userChipLbl[1][winnerNum], winnerNum, gamePlayers)
+        updateChipsLbl(userChipLbl[0][winnerNum], winnerNum, gamePlayers[winnerNum][0])
+
+        #Value of pot is now 0 wit hthe label on the screen also updated
+        potValue = 0
+        potLabel.config(text=('Pot Value: 0'))
+        
+        #Messagebox to indicate the winner of the round
+        messagebox.showinfo("Declare Winner", "Player " + str(winnerNum + 1) + " is the winner.")
+
+        return False
+
+    else:
+        for x in range(numOfPlayers):
+            #Adds the amount each player is willing to bet into the pot
+            potValue = potValue + gamePlayers[x][1]
+
+            #The amount they are placing into the pot is removed from their total
+            gamePlayers[x][0] = gamePlayers[x][0] - gamePlayers[x][1]
+
+            #The amount that the user is willing to bet is set to 0 for the next round
+            gamePlayers[x][1] = 0
+            
+            #Updates the GUI screen to show the user this change
+            updateLbl(userChipLbl[1][x], x, gamePlayers)
+            updateChipsLbl(userChipLbl[0][x], x, gamePlayers[x][0])
+
+
+        #Updates the pot of the screen to show the amount held in it after this round
+        potLabel.config(text=('Pot Value: ' + str(potValue)))
+
+        return True
+    
+#Function to deal the turn cards
+def dealTurn(deck, cardNum):
+
+    #Places the next card on the top of the stack on table
+    communityCards[3][0] = deck[cardNum][0]
+    communityCards[3][1] = deck[cardNum][1]
+
+    return communityCards
+
+#Function for the river round
+def river(playerCards, cardNum, deck, dealerNum, communityCards, turnLabel, potValue, oppCardArr, userChipLbl):
+
+    #Deal out the card required in the turn round
+    communityCards = dealRiver(deck, cardNum)
+    
+    #Calls function to display the cards onto the canvas faced up
+    comCard5 = displayCardsFaceUp(1120, 470, communityCards[4][0], communityCards[4][1])
+
+    minimumBet = 0
+    playerNumberAt = dealerNum
+
+    #Determines whether the first bet of the round has been placed
+    firstBetPlaced = False
+
+    nextRoundStart = roundPlay(firstBetPlaced, playerNumberAt, turnLabel, minimumBet, potValue, "River", playerCards, oppCardArr, userChipLbl)
+
+    #Messagebox to indicate the river round is about to start
+    messagebox.showinfo("Betting Finished", "The betting process has finished. And the winner is...")
+
+    #Determines the size of the array oppCardsUp
+    rows, cols = (5, 2)
+
+    #Creates the array which stores the label displaying all cards held by opponent players
+    oppCardsUp = [["" for x in range(cols)] for y in range(rows)]
+
+    #Traverses through every hole card held by bot players
+    for i in range(5):
+        for x in range(2):
+            #Checks whether the player hasnt't folded
+            if (gamePlayers[i + 1][2] == False):
+
+                #Retrieves the x and y coordinates of where the card needs to be played
+                oppCardX = retrieveOppCardX(i, x)
+                oppCardY = retrieveOppCardY(i, x)
+
+                #Displays the opponent cards faced up
+                cardUpLbl = displayCardsFaceUp(oppCardX, oppCardY, playerCards[i + 1][2*x - 2], playerCards[i + 1][2*x - 1])
+
+                #Adds this label to the array
+                oppCardsUp[i][x] = cardUpLbl
+
+    return nextRoundStart
+
+#Function to retrieve the x corrdinates of where opponent cards are placed
+def retrieveOppCardX(i, x):
+    if (i == 0) and (x == 0):
+        return 60
+    elif (i == 0) and (x == 1):
+        return 160
+    elif (i == 1) and (x == 0):
+        return 510
+    elif (i == 1) and (x == 1):
+        return 610
+    elif (i == 2) and (x == 0):
+        return 1110
+    elif (i == 2) and (x == 1):
+        return 1210
+    elif (i == 3) and (x == 0):
+        return 1560
+    elif (i == 3) and (x == 1):
+        return 1660
+    elif (i == 4) and (x == 0):
+        return 1110
+    elif (i == 4) and (x == 1):
+        return 1210
+
+#Function to retrieve the y corrdinates of where opponent cards are placed
+def retrieveOppCardY(i, x):
+    if (i == 0) and (x == 0):
+        return 355
+    elif (i == 0) and (x == 1):
+        return 355
+    elif (i == 1) and (x == 0):
+        return 155
+    elif (i == 1) and (x == 1):
+        return 155
+    elif (i == 2) and (x == 0):
+        return 155
+    elif (i == 2) and (x == 1):
+        return 155
+    elif (i == 3) and (x == 0):
+        return 355
+    elif (i == 3) and (x == 1):
+        return 355
+    elif (i == 4) and (x == 0):
+        return 780
+    elif (i == 4) and (x == 1):
+        return 780
+    
+#Function to deal the river cards
+def dealRiver(deck, cardNum):
+
+    #Places the next card on the top of the stack on table
+    communityCards[4][0] = deck[cardNum][0]
+    communityCards[4][1] = deck[cardNum][1]
+
+    return communityCards
+
+#Function to calculate the amount of chips in the pot
+def calculatePotValue(numOfChipsPerPlayer):
+
+    potValue = 0
+
+    #Traverses each player working out how much they have put into the pot
+    # from this working out the total potValue
+    for i in range (len(gamePlayers)):
+        potValue = potValue + (numOfChipsPerPlayer - gamePlayers[i][0])
+
+    return potValue
+
+#Function to determine the winner
+def determineWinner(playerCards, communityCards, potValue):
+
+    #Stores the best hand each player can make
+    bestHand = [0, 0, 0, 0, 0, 0,]
+
+    #Stores the current highest hand from the players checked
+    highestHand = 0
+
+    #stores the value of the current greatest hand
+    highestPlayer = 0
+
+    communityCardsSuit = [0, 0, 0, 0]
+    communityCardsSymbol = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    #Traverses through each  community card
+    for i in range(5):
+        #Analyses the suits of the community card
+        communityCardsSuit = checkSuit(communityCards, communityCardsSuit, i, 0)
+
+        #Analyses the symbols of the community card
+        communityCardsSymbol = checkSymbols(communityCards, communityCardsSymbol, i, 1)
+
+    #Checks the best hand of every player lef in the game
+    for i in range(len(gamePlayers)):
+        if (gamePlayers[i][2] == False):
+            handValue = calculateBestHand(i, playerCards, communityCardsSuit, communityCardsSymbol)
+
+            #Adds hand value calculated to the array storing the hand values of each player
+            bestHand[i] = handValue
+
+            #Checks whether hand value is greater than the highest so far
+            if (handValue > highestHand):
+                highestHand = handValue
+                highestPlayer = i
+                
+    print (bestHand)
+
+    #Message indicating who the winner is
+    messagebox.showinfo("Winner", "Player " + str(highestPlayer + 1) + " is the winner.")
+
+    #Updates the gamePlayers array
+    gamePlayers[highestPlayer][0] = gamePlayers[highestPlayer][0] + potValue
+
+    #Updates the label
+    updateChipsLbl(userChipLbl[0][highestPlayer], highestPlayer, gamePlayers[highestPlayer][0])
+
+    #Value of pot is now 0 with the label on the screen also updated
+    potValue = 0
+    potLabel.config(text=('Pot Value: 0'))
+    
+
+#Function to check the suit of the card passed in
+def checkSuit(arrayCheck, suitArray, x, y):
+    
+    if (arrayCheck[x][y] == "Spades"):
+        suitArray[0] = suitArray[0] + 1
+    elif (arrayCheck[x][y] == "Diamonds"):
+        suitArray[1] = suitArray[1] + 1
+    elif (arrayCheck[x][y] == "Clubs"):
+        suitArray[2] = suitArray[2] + 1
+    elif (arrayCheck[x][y] == "Hearts"):
+        suitArray[3] = suitArray[3] + 1
+
+    return suitArray
+
+#Function to analyse the symbol of the card
+def checkSymbols(arrayCheck, symbolArray, x, y):
+
+    if (arrayCheck[x][y] == "Two"):
+        symbolArray[0] = symbolArray[0] + 1
+    elif (arrayCheck[x][y] == "Three"):
+        symbolArray[1] = symbolArray[1] + 1
+    elif (arrayCheck[x][y] == "Four"):
+        symbolArray[2] = symbolArray[2] + 1
+    elif (arrayCheck[x][y] == "Five"):
+        symbolArray[3] = symbolArray[3] + 1
+    elif (arrayCheck[x][y] == "Six"):
+        symbolArray[4] = symbolArray[4] + 1
+    elif (arrayCheck[x][y] == "Seven"):
+        symbolArray[5] = symbolArray[5] + 1
+    elif (arrayCheck[x][y] == "Eight"):
+        symbolArray[6] = symbolArray[6] + 1
+    elif (arrayCheck[x][y] == "Nine"):
+        symbolArray[7] = symbolArray[7] + 1
+    elif (arrayCheck[x][y] == "Ten"):
+        symbolArray[8] = symbolArray[8] + 1
+    elif (arrayCheck[x][y] == "Jack"):
+        symbolArray[9] = symbolArray[9] + 1
+    elif (arrayCheck[x][y] == "Queen"):
+        symbolArray[10] = symbolArray[10] + 1
+    elif (arrayCheck[x][y] == "King"):
+        symbolArray[11] = symbolArray[11] + 1
+    elif (arrayCheck[x][y] == "Ace"):
+        symbolArray[12] = symbolArray[12] + 1
+
+    return symbolArray
+
+#Function to calculate the strongest hand value for that player
+def calculateBestHand(playerNum, playerCards, communityCardsSuit, communityCardsSymbol):
+
+    #Stores values of suits and symbols for each player
+    playerSuit = [0, 0, 0, 0]
+    playerSymbol = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    #Analyses the suits of the cards held by the player
+    x = 0
+    y = 1
+
+    #Traverss through each card held by th player
+    for i in range(2):
+
+        #Analyses the suit of the hole card
+        playerSuit = checkSuit(playerCards, playerSuit, playerNum, x)
+        x = x + 2
+
+        #Analyses the symbol of the hole card
+        playerSymbol = checkSymbols(playerCards, playerSymbol, playerNum, y)
+        y = y + 2
+
+    #Stores values of suits and symbols of all cards the player can use
+    totalSuit = [0, 0, 0, 0]
+    totalSymbol = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    #Finds the total amount of suits from cards user can use
+    for x in range(4):
+        totalSuit[x] = playerSuit[x] + communityCardsSuit[x]
+
+    #Finds the total amount of symbols from cards user can use
+    for y in range(13):
+        totalSymbol[y] = playerSymbol[y] + communityCardsSymbol[y]
+
+    #Checks whether a royal flush is possible with the cards held by the player
+    royalFlushHighest = checkRoyalFlush(totalSuit, playerCards, communityCards, playerNum)
+    if (royalFlushHighest == True):
+        return 10
+    else:
+        #Checks whether a straight flush is possible with the cards held by the player
+        straightFlushHighest = checkStraightFlush(totalSuit, playerCards, communityCards, playerNum)
+        if (straightFlushHighest == True):
+            return 9
+        else:
+            #Checks whether a four of a kind is possible with the cards held by the player
+            fourOfKindHighest = checkFourOfKind(totalSymbol)
+            if (fourOfKindHighest == True):
+                return 8
+            else:
+                #Checks whether a full house is possible with the cards held by the player
+                fullHouseHighest = checkFullHouse(totalSymbol)
+                if (fullHouseHighest == True):
+                    return 7
+                else:
+                    #Checks whether a flush is possible with the cards held by the player
+                    flushHighest = checkFlush(totalSuit)
+                    if (flushHighest == True):
+                        return 6
+                    else:
+                        #Checks whether a straight is possible with the cards held by the player
+                        straightHighest = checkStraight(playerCards, playerNum)
+                        if (straightHighest == True):
+                            return 5
+                        else:
+                            #Checks whether a three of a kind is possible with the cards held by the player
+                            threeOfAKindHighest = checkThreeOfKind(totalSymbol)
+                            if (threeOfAKindHighest == True):
+                                return 4
+                            else:
+                                #Checks whether a two of a kind is possible with the cards held by the player
+                                twoPairHighest = checkTwoPair(totalSymbol)
+                                if (twoPairHighest == True):
+                                    return 3
+                                else:
+                                    #Checks whether a two of a kind is possible with the cards held by the player
+                                    pairHighest = pair(totalSymbol)
+                                    if (pairHighest == True):
+                                        return 2
+                                    else:
+                                        return 1
+        
+#Function to check whether a royal flush is possible with the cards held by the player
+def checkRoyalFlush(totalSuit, playerCards, communityCards, playerNum):
+
+    #Determines whether there are more than 5 cards with the same suit
+    if (totalSuit[0] >= 5):
+        suitMatched = "Spades"
+    elif (totalSuit[1] >= 5):
+        suitMatched = "Diamonds"
+    elif (totalSuit[2] >= 5):
+        suitMatched = "Clubs"
+    elif (totalSuit[3] >= 5):
+        suitMatched = "Hearts"
+    #If not royal flush is not possible
+    else:
+        return False
+
+    #List with the symbols required for royal flush
+    symbolsList = ["Ten", "Jack", "Queen", "King", "Ace"]
+    
+    #Traverses the two hole cards checking the symbol of those with the correct suit 
+    y = 0
+    for i in range(2):
+        #Checks whether the card has the suit with a total of more than 5
+        if (playerCards[playerNum][y] == suitMatched):
+            #If so the symbol of the card is retrieved
+            cardSymbol = playerCards[playerNum][y+1]
+            #Checks whether the symbol is part of the list and removes if so
+            if (cardSymbol in symbolsList):
+                symbolsList.remove(cardSymbol)
+
+        y = y + 2
+
+    #Traverses the five community cards checking the symbol of those with the correct suit 
+    for i in range(5):
+        #Checks whether the card has the suit with a total of more than 5
+        if (communityCards[i][0] == suitMatched):
+            cardSymbol = communityCards[i][1]
+            #Checks whether the symbol is part of the list and removes if so
+            if (cardSymbol in symbolsList):
+                symbolsList.remove(cardSymbol)
+
+    #If there are no items left, then it is a royal flush
+    if (len(symbolsList) == 0):
+        return True
+    else:
+        return False
+
+#Function to check whether a straight flush is possible with the cards held by the player
+def checkStraightFlush(totalSuit, playerCards, communityCards, playerNum):
+    #Determines whether there are more than 5 cards with the same suit
+    if (totalSuit[0] >= 5):
+        suitMatched = "Spades"
+    elif (totalSuit[1] >= 5):
+        suitMatched = "Diamonds"
+    elif (totalSuit[2] >= 5):
+        suitMatched = "Clubs"
+    elif (totalSuit[3] >= 5):
+        suitMatched = "Hearts"
+    #If not royal flush is not possible
+    else:
+        return False
+
+    #List keeping track of whether each symbol has been found for the suit with more than 5
+    valueList = [False, False, False, False, False, False, False, False, False, False, False, False, False]
+
+    #Traverses the two hole cards checking the symbol of those with the correct suit
+    y = 0
+    for i in range(2):
+        #Checks whether the card has the suit with a total of more than 5
+        if (playerCards[playerNum][y] == suitMatched):
+            #Retrieves the index value to be changed to true in the array
+            cardValue = retrieveCardValue(playerCards[playerNum][y + 1])
+            valueList[cardValue] = True
+
+        y = y + 2
+
+    #Traverses the five community cards checking the symbol of those with the correct suit
+    for i in range(5):
+        #Checks whether the card has the suit with a total of more than 5
+        if (communityCards[i][0] == suitMatched):
+            #Retrieves the index value to be changed to true in the array
+            cardValue = retrieveCardValue(communityCards[i][1])
+            valueList[cardValue] = True
+
+
+    #Checks for 5 consecutive symbols
+    for i in range (9):
+        if ((valueList[i] == True) and (valueList[i+1] == True) and (valueList[i+2]== True) and (valueList[i+3] == True) and (valueList[i+4] == True)):
+            return True
+
+    return False
+
+#Function to check whether a straight flush is possible with the cards held by the player
+def checkFourOfKind(totalSymbol):
+    #Traverses all 13 possible combinations 
+    for x in range(13):
+        #Checks if one symbol has more than 4 
+        if (totalSymbol[x] >= 4):
+            return True
+
+    return False
+
+#Retrieves the values of the symbol
+def retrieveCardValue(symbol):
+    match symbol:
+
+        case "Two":
+            return 0
+        case "Three":
+            return 1
+        case "Four":
+            return 2
+        case "Five":
+            return 3
+        case "Six":
+            return 4
+        case "Seven":
+            return 5
+        case "Eight":
+            return 6
+        case "Nine":
+            return 7
+        case "Ten":
+            return 8
+        case "Jack":
+            return 9
+        case "Queen":
+            return 10
+        case "King":
+            return 11
+        case "Ace":
+            return 12
+
+#Function to check whether a full house is possible
+def checkFullHouse(totalSymbol):
+    
+    threeSymbols = False
+    twoSymbols = False
+
+    #Traverses through all symbols
+    for x in range(13):
+        
+        #Checks if there is a symbol that appears three times from the cards available 
+        if (totalSymbol[x] == 3 and threeSymbols == False):
+            threeSymbols = True
+
+        #Checks if there is a symbol that appears more than twice from the cards available
+        elif (totalSymbol[x] >= 2):
+            twoSymbols = True
+
+    #Checks whether values of both variables are True
+    if (threeSymbols == True) and (twoSymbols == True):
+        return True
+    else:
+        return False
+
+#Function to check whether a flush is possible
+def checkFlush(totalSuit):
+    #Goes through all four suits
+    for x in range(4):
+        #Checks whether a suit has more than 5 cards 
+        if (totalSuit[x] >= 5):
+            return True
+
+    return False
+
+#Function to check whether straight is possible
+def checkStraight(playerCards, playerNum):
+    
+    #List keeping track of whether each symbol has been found for the suit with more than 5
+    valueList = [False, False, False, False, False, False, False, False, False, False, False, False, False]
+
+    #Traverses the two hole cards checking the symbol of those with the correct suit
+    y = 0
+    for i in range(2):
+        #Retrieves the index value to be changed to true in the array
+        cardValue = retrieveCardValue(playerCards[playerNum][y + 1])
+        valueList[cardValue] = True
+
+        y = y + 2
+
+    #Traverses the five community cards checking the symbol of those with the correct suit
+    for i in range(5):
+        #Retrieves the index value to be changed to true in the array
+        cardValue = retrieveCardValue(communityCards[i][1])
+        valueList[cardValue] = True
+
+
+    #Checks for 5 consecutive symbols
+    for i in range (9):
+        if ((valueList[i] == True) and (valueList[i+1] == True) and (valueList[i+2]== True) and (valueList[i+3] == True) and (valueList[i+4] == True)):
+            return True
+
+    return False
+
+#Function to check whether three of a kind is possible
+def checkThreeOfKind(totalSymbol):
+    #Traverses through the 13 different symbols
+    for x in range(13):
+        #Checks whether there are 3 cards of the same symbol available
+        if (totalSymbol[x] == 3):
+            return True
+			
+    return False
+
+#Function to check whether a two pair is possible
+def checkTwoPair(totalSymbol):
+    
+    firstPair = False
+    secondPair = False
+
+    #Traverses through the 13 different symbols
+    for x in range(13):
+        #Checks whether there are 2 cards of the same symbol available
+        if (totalSymbol[x] == 2):
+            #Checks whether there is already one pair previously
+            if (firstPair == False):
+                firstPair = True
+            else:
+                secondPair = True
+                return True
+
+    return False
+
+#Function to check whether a pair is possible
+def pair(totalSymbol):
+
+    #Traverses through the 13 different symbols
+    for x in range(13):
+        #Checks whether there are 2 cards of the same symbol available
+        if (totalSymbol[x] == 2):
+            return True
+        
+    return False
+
+#Function to determine the moves made by bots in the preflop round
+def botMovePreflop(playerNumberAt, minimumBet, playerCards):
+
+    #Array storing all the possible combinations of hole cards
+    probWin = [[0.51, 0.35, 0.36, 0.37, 0.37, 0.37, 0.4, 0.42, 0.44, 0.47, 0.49, 0.53, 0.57],
+               [0.39, 0.55, 0.38, 0.39, 0.39, 0.39, 0.4, 0.43, 0.45, 0.48, 0.5, 0.54, 0.58],
+               [0.4, 0.42, 0.58, 0.41, 0.41, 0.41, 0.42, 0.43, 0.45, 0.48, 0.5, 0.54, 0.58],
+               [0.41, 0.43, 0.44, 0.61, 0.43, 0.43, 0.44, 0.45, 0.47, 0.49, 0.52, 0.55, 0.6],
+               [0.4, 0.42, 0.44, 0.46, 0.64, 0.45, 0.46, 0.47, 0.48, 0.5, 0.53, 0.56, 0.59],
+               [0.41, 0.43, 0.45, 0.46, 0.48, 0.67, 0.47, 0.48, 0.5, 0.52, 0.54, 0.57, 0.6],
+               [0.43, 0.43, 0.45, 0.47, 0.49, 0.5, 0.69, 0.5, 0.52, 0.53, 0.55, 0.58, 0.61],
+               [0.45, 0.46, 0.46, 0.48, 0.5, 0.51, 0.53, 0.72, 0.53, 0.55, 0.57, 0.59, 0.62],
+               [0.47, 0.48, 0.49, 0.49, 0.51, 0.53, 0.54, 0.56, 0.75, 0.57, 0.59, 0.61, 0.64],
+               [0.5, 0.5, 0.51, 0.52, 0.53, 0.54, 0.56, 0.57, 0.59, 0.78, 0.59, 0.62, 0.65],
+               [0.52, 0.53, 0.54, 0.55, 0.55, 0.56, 0.58, 0.59, 0.61, 0.61, 0.8, 0.62, 0.65],
+               [0.55, 0.56, 0.57, 0.58, 0.58, 0.59, 0.6, 0.61, 0.63, 0.64, 0.64, 0.83, 0.66],
+               [0.59, 0.6, 0.61, 0.62, 0.62, 0.63, 0.63, 0.64, 0.66, 0.66, 0.67, 0.68, 0.85]]
+
+    #Retrieves information of the first hole card
+    suit1 = playerCards[playerNumberAt][0]
+    symbol1 = playerCards[playerNumberAt][1]
+    value1 = retrieveCardValue(symbol1)
+    #Retrieves information of the second hole card
+    suit2 = playerCards[playerNumberAt][2]
+    symbol2 = playerCards[playerNumberAt][3]
+    value2 = retrieveCardValue(symbol2)
+
+    #determines how to read off the array and retrieve probability
+    if (suit1 == suit2):
+        if (value1 >= value2):
+            probPlayerWin = probWin[value1][value2]
+        else:
+            probPlayerWin = probWin[value2][value1]
+    else:
+        if (value1 > value2):
+            probPlayerWin = probWin[value2][value1]
+        else:
+            probPlayerWin = probWin[value1][value2]
+
+    #Moves the user should make based off their probabilty of winning and minimum bet
+    if (probPlayerWin < 0.5):
+        selectedMove = "Fold"
+    elif (probPlayerWin >= 0.5) and (probPlayerWin < 0.6):
+        if (minimumBet < 75):
+            selectedMove = "Call"
+        else:
+            selectedMove = "Fold"       
+    elif (probPlayerWin >=0.6) and (probPlayerWin < 0.7):
+        if (minimumBet < 60):
+            selectedMove = "Raise"
+        elif (minimumBet < 90):
+            selectedMove = "Call"
+        else:
+            selectedMove = "Fold"       
+    elif (probPlayerWin >= 0.7):
+        if (minimumBet < 75):
+            selectedMove = "Raise"
+        else:
+             selectedMove = "Call"
+    return selectedMove
+
+#Function to determine the moves made by bots for the river
+def botMoveRiver(playerNumberAt, minimumBet, playerCards):
+    
+    communityCardsSuit = [0, 0, 0, 0]
+    communityCardsSymbol = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    #Traverses through each  community card
+    for i in range(5):
+        #Analyses the suits of the community card
+        communityCardsSuit = checkSuit(communityCards, communityCardsSuit, i, 0)
+
+        #Analyses the symbols of the community card
+        communityCardsSymbol = checkSymbols(communityCards, communityCardsSymbol, i, 1)
+
+    #Determines the hand value of the cards available to the user
+    handValue = calculateBestHand(playerNumberAt, playerCards, communityCardsSuit, communityCardsSymbol)
+
+    #User makes their move based on their hand strength and the amount for the minimum bet
+    if (handValue == 10) or (handValue == 9) or (handValue == 8):
+        if (minimumBet < 170):
+            selectedMove = "Raise"
+        else:
+            selectedMove = "Call"
+    elif (handValue == 7):
+        if (minimumBet < 150):
+            selectedMove = "Raise"
+        else:
+            selectedMove = "Call"
+    elif (handValue == 6) or (handValue == 5):
+        if (minimumBet < 120):
+            selectedMove = "Raise"
+        else:
+            selectedMove = "Call"
+    elif (handValue == 4) or (handValue == 3):
+        if (minimumBet < 100):
+            selectedMove = "Raise"
+        elif(minimumBet < 120):
+            selectedMove = "Call"
+        else:
+            selectedMove = "Fold"
+
+    elif (handValue == 2):
+        if (minimumBet < 80):
+            selectedMove = "Call"
+        else:
+            selectedMove = "Fold"
+    else:
+        selectedMove = "Fold"
+
+    return selectedMove
+    
+        
+#///*Main Program*///
+
+#Retrieves values for width and height of the screen
+screenWidth = window.winfo_screenwidth()
+screenHeight = window.winfo_screenheight()
+    
+#Creates a canvas of height and weight of the screen
+canvas = Canvas(window, height=screenHeight, width=screenWidth)
+
+#Calls function to display background onto the screen, covering the entire screen
+displayBackground(screenWidth, screenHeight)
+canvas.pack()
+    
+#Value of the pot is initialised as 0
+potValue = 0
+displayPot(potValue)
+
+#Number of Poker Chips per Player is initialised to 500 and initialBets to 0
+numOfChipsPerPlayer = 500
+initialBets = 0
+numOfPlayers = 6
+
+#calls the function to display all labels and buttons required
+userChipLbl = createInterface(numOfChipsPerPlayer, initialBets, numOfPlayers)
+
+#Displays the cards after 3 seconds
+window.update()
+time.sleep(3)
+
+#Array deck used to store the created deck of cards
+deck = createCards()
+
+#Shuffles the deck of cards
+shuffleCards(deck)
+
+#The pprint module enables data items to be printed in separate lines
+pprint(deck)
+
+playerCards = dealPreflopCards(deck, numOfPlayers)
+print(playerCards)
+
+#Determines which card that is on he top of the pile
+cardNum = 0
+
+userCard1 = displayCardsFaceUp(510, 780, playerCards[0][0], playerCards[0][1])
+userCard2 = displayCardsFaceUp(610, 780, playerCards[0][2], playerCards[0][3])
+
+#Calls procedure to display the back of the opponent cards
+oppCardArr = createOpponentCards()
+cardNum = (numOfPlayers * 2) 
+
+#Sets 'player 1' as the dealer
+dealerNum = 0
+
+#Creates the label for identifying whose turn it is
+turnLabel = displayTurn(dealerNum)
+
+#Ante value per game is set as 10. Ante is the forced bet each player must do
+anteValue = 10
+
+window.update()
+
+#Begins the preflop round
+flopToStart = preflopRound(dealerNum, numOfPlayers, numOfChipsPerPlayer, anteValue, potValue, turnLabel, playerCards, oppCardArr, userChipLbl)
+
+potValue = calculatePotValue(numOfChipsPerPlayer)
+
+#Checks whether the flop round can begin
+if (flopToStart == True):
+
+    #Begins the flop round
+    turnToStart = flop(playerCards, cardNum, deck, dealerNum, turnLabel, potValue, oppCardArr, userChipLbl)
+
+    potValue = calculatePotValue(numOfChipsPerPlayer)
+    cardNum = cardNum + 3
+
+    #Checks whether the turn round can begin
+    if (turnToStart == True):
+
+        #Begins the turn round
+        riverToStart = turn(playerCards, cardNum, deck, dealerNum, communityCards, turnLabel, potValue, oppCardArr, userChipLbl)
+
+        potValue = calculatePotValue(numOfChipsPerPlayer)
+        cardNum = cardNum + 1
+
+        #Checks whether the turn round can begin
+        if (riverToStart == True):
+
+            #Begins the river round
+            calculateHands = river(playerCards, cardNum, deck, dealerNum, communityCards, turnLabel, potValue, oppCardArr, userChipLbl)
+
+            potValue = calculatePotValue(numOfChipsPerPlayer)
+
+            #Checks whether the program needs to calculate the player with the strongest hand
+            if (calculateHands == True):
+
+                #Checks which player has the strongest hand if there is more than one player left
+                determineWinner(playerCards, communityCards, potValue)
+            
+window.mainloop()
+
